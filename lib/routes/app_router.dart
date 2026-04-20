@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../views/ciclo_vida/ciclo_vida_screen.dart';
 import '../views/future/future_view.dart';
+import '../views/timer/timer_view.dart';
 
 final GoRouter appRouter = GoRouter(
   routes: [
@@ -49,6 +50,12 @@ final GoRouter appRouter = GoRouter(
       path: '/future',
       name: 'future',
       builder: (context, state) => const FutureView(),
+    ),
+    //!Ruta para el Timer / Cronómetro
+    GoRoute(
+      path: '/timer',
+      name: 'timer',
+      builder: (context, state) => const TimerView(),
     ),
   ],
 );
