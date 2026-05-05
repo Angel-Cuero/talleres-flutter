@@ -1,14 +1,16 @@
 # 📱 Electiva 2026 — Flutter Educativo
 
-Aplicación Flutter didáctica que demuestra conceptos clave de programación asíncrona, timers e isolates en Dart/Flutter.
+Aplicación Flutter didáctica que demuestra conceptos clave de programación asíncrona, timers, isolates e integración con Firebase en Dart/Flutter.
+
+> **Versión actual:** `1.0.1+2` · **SDK mínimo:** Flutter ≥ 3.x · **Plataforma:** Android
 
 ---
 
 ## 🗂️ Pantallas de la aplicación
 
 | Ruta | Pantalla | Concepto principal |
-|------|----------|--------------------|
-| `/` | Inicio | Navegación general |
+|------|----------|-------------------:|
+| `/` | Inicio | Navegación general con Drawer |
 | `/paso_parametros` | Paso de Parámetros | Navegación y parámetros en rutas |
 | `/ciclo_vida` | Ciclo de Vida | `initState`, `dispose`, lifecycle |
 | `/future` | Future / async-await | Asincronía, estados de carga |
@@ -119,7 +121,7 @@ Estado: Pausado   ──→  timer.cancel() + guarda lap
 
 ### ¿Cuándo usarlo?
 
-Usa `Isolate` cuando tienes una tarea **CPU-bound** (cálculos pesados, parsing, compresión) que bloquearía el hilo principal y congalaría la UI. Los Isolates tienen su propia memoria y se comunican mediante `SendPort` / `ReceivePort`.
+Usa `Isolate` cuando tienes una tarea **CPU-bound** (cálculos pesados, parsing, compresión) que bloquearía el hilo principal y congelaría la UI. Los Isolates tienen su propia memoria y se comunican mediante `SendPort` / `ReceivePort`.
 
 ```dart
 // Función top-level (no puede acceder al estado del widget)
@@ -200,7 +202,7 @@ flutter run
 
 - Flutter ≥ 3.x
 - Dart ≥ 3.x
-- Dependencias: `go_router`
+- Dependencias: `go_router`, `firebase_core`
 
 ---
 
@@ -211,3 +213,245 @@ flutter run
 ¿Necesito repetir algo cada N ms/s?         → Timer.periodic
 ¿El cálculo es pesado y bloquea la UI?      → Isolate.spawn
 ```
+
+---
+
+## 🔥 Publicación con Firebase App Distribution
+
+### ¿Qué es Firebase App Distribution?
+
+Firebase App Distribution permite distribuir versiones pre-release de tu APK a testers de forma segura, sin pasar por el proceso completo de la Play Store. Los testers reciben un correo con un enlace de descarga directo.
+
+---
+
+### 🔄 Flujo completo: Generar APK → Distribución → Testers → Instalación → Actualización
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     FLUJO DE DISTRIBUCIÓN                       │
+└─────────────────────────────────────────────────────────────────┘
+
+  1. DESARROLLADOR
+     │
+     ├─ Modifica código / corrige bugs
+     ├─ Incrementa versión en pubspec.yaml
+     │   (ej: 1.0.0+1  →  1.0.1+2)
+     │
+     ▼
+  2. GENERAR APK DE RELEASE
+     │   flutter build apk --release
+     │   → build/app/outputs/flutter-apk/app-release.apk
+     │
+     ▼
+  3. SUBIR A FIREBASE APP DISTRIBUTION
+     │   Firebase Console → App Distribution → Nueva versión
+     │   → Adjuntar APK + Agregar Release Notes
+     │
+     ▼
+  4. NOTIFICACIÓN A TESTERS
+     │   Firebase envía email automáticamente
+     │   → El tester hace clic en el enlace
+     │
+     ▼
+  5. INSTALACIÓN EN DISPOSITIVO TESTER
+     │   → Descarga el APK desde el navegador
+     │   → Habilita "Fuentes desconocidas" si es necesario
+     │   → Instala la app
+     │
+     ▼
+  6. NUEVA VERSIÓN (ACTUALIZACIÓN)
+     │   El desarrollador sube una versión nueva (ej: 1.0.2+3)
+     │   → Firebase notifica al tester
+     │   → El tester instala sobre la versión anterior
+     └─────────────────────────────────────────────────────┘
+```
+
+---
+
+### 📦 Sección "Publicación" — Pasos resumidos
+
+#### Paso 1 — Verificar configuración previa
+
+Asegúrate de que los siguientes archivos estén correctamente configurados:
+
+| Archivo | Qué verificar |
+|---------|---------------|
+| `android/app/src/main/AndroidManifest.xml` | Permiso `INTERNET` declarado |
+| `android/app/google-services.json` | Archivo de Firebase presente |
+| `android/app/build.gradle.kts` | `versionCode = flutter.versionCode` |
+| `pubspec.yaml` | Versión coherente (`versionName+versionCode`) |
+
+El permiso de Internet debe estar declarado explícitamente:
+
+```xml
+<!-- android/app/src/main/AndroidManifest.xml -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <application ...>
+```
+
+#### Paso 2 — Incrementar versión en `pubspec.yaml`
+
+```yaml
+# Formato: versionName+versionCode
+# versionName → lo que ve el usuario (semver)
+# versionCode → entero incremental que Android usa internamente
+
+version: 1.0.1+2   # ← v1.0.1, build number 2
+```
+
+> ⚠️ El `versionCode` **siempre debe ser mayor** que el de la versión anterior. Firebase rechazará un APK con el mismo `versionCode`.
+
+#### Paso 3 — Generar el APK de release
+
+```bash
+flutter build apk --release
+```
+
+El APK generado se encuentra en:
+```
+build/app/outputs/flutter-apk/app-release.apk
+```
+
+#### Paso 4 — Subir a Firebase App Distribution
+
+1. Ir a [console.firebase.google.com](https://console.firebase.google.com)
+2. Seleccionar el proyecto → **App Distribution**
+3. Clic en **"Lanzar"** o **"+"**
+4. Arrastrar/seleccionar `app-release.apk`
+5. Agregar **Release Notes** (ver formato abajo)
+6. Seleccionar grupo de testers → **"Distribuir"**
+
+#### Paso 5 — El tester instala la app
+
+El tester recibirá un email de Firebase con un enlace. Al hacer clic:
+1. Descarga la app de Firebase App Tester (si no la tiene)
+2. Acepta la invitación
+3. Instala el APK directamente desde la app de Firebase
+
+#### Paso 6 — Actualización incremental
+
+Para subir una nueva versión:
+1. Modificar código
+2. Incrementar versión: `1.0.1+2` → `1.0.2+3`
+3. Repetir pasos 3 al 5
+
+Los testers existentes recibirán notificación automática.
+
+---
+
+### 🔁 Cómo replicar el proceso en el equipo
+
+```bash
+# 1. Clonar el repositorio
+git clone <url-del-repo>
+cd electiva_2026
+
+# 2. Instalar dependencias
+flutter pub get
+
+# 3. Asegurarse de tener google-services.json
+# Descargarlo desde Firebase Console → Configuración del proyecto
+# Copiarlo en: android/app/google-services.json
+
+# 4. Incrementar versión en pubspec.yaml (manualmente)
+# version: X.Y.Z+N  ← cambiar N y Z según corresponda
+
+# 5. Generar APK
+flutter build apk --release
+
+# 6. Subir el APK a Firebase App Distribution
+# (desde la consola web de Firebase)
+```
+
+---
+
+### 🏷️ Versionado — Convención utilizada
+
+#### Formato
+
+```
+version: versionName+versionCode
+         └────┬────┘ └────┬────┘
+         Semver 3 partes  Entero autoincremental
+         (lo ve el usuario) (lo usa Android/Firebase)
+```
+
+#### Historial de versiones
+
+| versionName | versionCode | pubspec.yaml | Descripción |
+|-------------|-------------|--------------|-------------|
+| 1.0.0 | 1 | `1.0.0+1` | ✅ Release inicial — Firebase configurado |
+| 1.0.1 | 2 | `1.0.1+2` | 🎨 Cambio de paleta de colores + documentación |
+
+#### Regla semver aplicada
+
+```
+1  .  0  .  1  +  2
+│     │    │      │
+│     │    │      └── versionCode: entero, siempre sube
+│     │    └───────── patch: bug fix o cambio menor (colores, docs)
+│     └────────────── minor: nueva funcionalidad compatible
+└──────────────────── major: cambio incompatible / redesign total
+```
+
+---
+
+### 📝 Formato de Release Notes
+
+Las Release Notes se escriben al subir cada versión a Firebase App Distribution. Deben ser concisas y en el idioma del equipo (español en este caso).
+
+#### Plantilla
+
+```
+v{versionName} — {título corto}
+
+Cambios:
+• {descripción del cambio 1}
+• {descripción del cambio 2}
+
+Testers: probar {funcionalidad específica} en dispositivos con Android {versión mínima}+
+```
+
+#### Ejemplos reales del proyecto
+
+```
+v1.0.0 — Primera versión con Firebase
+
+Cambios:
+• Integración inicial de Firebase Core
+• Permiso INTERNET agregado al AndroidManifest
+• Módulos: Future/async, Timer/Cronómetro, Isolate
+
+Testers: verificar que la app abre correctamente y que el cronómetro
+funciona sin congelar la UI.
+```
+
+```
+v1.0.1 — Nuevo esquema de colores + documentación
+
+Cambios:
+• Nueva paleta: índigo profundo (#5C35CC) + teal (#00BFA5)
+• Drawer rediseñado con gradiente y avatar
+• README actualizado con guía de Firebase App Distribution
+
+Testers: confirmar que la navegación del Drawer funciona
+correctamente con el nuevo diseño en Android 8+.
+```
+
+---
+
+## 🔐 Notas sobre Seguridad y Firma
+
+El APK de release está actualmente firmado con la **clave de debug** (suficiente para Firebase App Distribution):
+
+```kotlin
+// android/app/build.gradle.kts
+buildTypes {
+    release {
+        signingConfig = signingConfigs.getByName("debug") // ← aceptable para pruebas
+    }
+}
+```
+
+> Para publicar en la **Play Store** en el futuro, se deberá configurar una `keystore` propia y no compartir las credenciales en el repositorio.
