@@ -11,18 +11,42 @@ class CustomDrawer extends StatelessWidget {
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.primary, // Usa el color primario del tema
-            ),
-            child: const Text(
-              'Menú',
-              style: TextStyle(
-                color: Colors
-                    .white, // Texto blanco para contrastar con el color primario
-                fontSize: 24,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF5C35CC), // primary
+                  Color(0xFF3A1FA8), // primary dark
+                ],
               ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: const [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: Color(0xFF00BFA5),
+                  child: Icon(Icons.school, color: Colors.white, size: 28),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Electiva 2026',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'UCEVA — Flutter',
+                  style: TextStyle(
+                    color: Colors.white60,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
           ListTile(
